@@ -28,17 +28,33 @@ void setup()
   pinMode(analogOutPin,   OUTPUT);  // set the button1 as an input to read
   sei();                    // Enable global interrupts
   EIMSK |= (1 << INT0);     // Enable external interrupt INT0
-  EICRA |= (1 << ISC01);    // Trigger INT0 on falling edge
+  EICRA |= (1 << ISC00 &&  ISC01);    // Trigger INT0 on falling edge
  
+}
+
+ISR(INT0_vect)
+{
+
+ // Serial.print("interrupt 1 works \n");
+  if((digitalRead(button1Pin)) == LOW)
+  {
+    buttonState1 = HIGH;
+  }
+
+   
 }
 
 void loop()
 {
 //reading1 = digitalRead(button1Pin);
-  reading2 = digitalRead(button2Pin);
+ // reading2 = digitalRead(button2Pin);
 //buttonState1 = reading1;
-  buttonState2 = reading2;
+ // buttonState2 = reading2;
  
+    if((digitalRead(button1Pin)) == HIGH)
+  {
+    buttonState1 = LOW;
+  }
 
     // if the button state has changed:
     if (buttonState1 != lastButtonState1) 
@@ -74,7 +90,4 @@ void loop()
     }                
 }
 
-ISR(INT0_vect)
-{
-  Serial.print("interrupt 1 works \n");
-}
+
