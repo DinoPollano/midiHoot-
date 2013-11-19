@@ -23,19 +23,18 @@ void setup()
 {
   // initialize serial communications at 9600 bps:
   Serial.begin(9600); 
+  
+  
   pinMode(button1Pin, INPUT);  // set the button1 as an input to read
+  digitalWrite(button1Pin, HIGH);    // Enable pullup resistor
   pinMode(button2Pin, INPUT);
   pinMode(analogOutPin,   OUTPUT);  // set the button1 as an input to read
   sei();                    // Enable global interrupts
   EIMSK |= (1 << INT0);     // Enable external interrupt INT0
+  
   EICRA |= (1 << ISC01);    // Trigger INT0 on falling edge
-}
 
-ISR(INT0_vect)
-{
-  Serial.print("interrupt 1 works \n");
 }
-
 
 void loop() 
 {
@@ -45,7 +44,7 @@ void loop()
 //reading1 = digitalRead(button1Pin);
 reading2 = digitalRead(button2Pin);
 
-buttonState1 = reading1;
+//buttonState1 = reading1;
 buttonState2 = reading2; 
  
 
@@ -84,4 +83,9 @@ buttonState2 = reading2;
     }
  
                      
+}
+
+ISR(INT0_vect)
+{
+  Serial.print("interrupt 1 works");
 }
