@@ -29,7 +29,7 @@ void setup()
   sei();                    // Enable global interrupts
   EIMSK |= (1 << INT0);     // Enable external interrupt INT0
   EICRA |= (1 << ISC01);    // Trigger INT0 on falling edge
-
+ 
 }
 
 void loop()
