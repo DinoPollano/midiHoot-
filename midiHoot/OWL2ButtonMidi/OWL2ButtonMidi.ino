@@ -23,12 +23,15 @@ void setup()
   // initialize serial communications at 9600 bps:
   Serial.begin(9600);
   pinMode(button1Pin, INPUT);  // set the button1 as an input to read
-  digitalWrite(button1Pin, HIGH);    // Enable pullup resistor
   pinMode(button2Pin, INPUT);
+  digitalWrite(button1Pin, HIGH);    // Enable pullup resistor
+  digitalWrite(button2Pin, HIGH);    // Enable pullup resistor
   pinMode(analogOutPin,   OUTPUT);  // set the button1 as an input to read
   sei();                    // Enable global interrupts
   EIMSK |= (1 << INT0);     // Enable external interrupt INT0
-  EICRA |= (1 << ISC00 &&  ISC01);    // Trigger INT0 on falling edge
+  EICRA |= (1 << ISC00);    // Trigger INT0 on falling edge
+  EIMSK |= (1 << INT1);     // Enable external interrupt INT0
+  EICRA |= (1 << ISC10);    // Trigger INT0 on falling edge
  
 }
 
@@ -44,6 +47,19 @@ ISR(INT0_vect)
    
 }
 
+ISR(INT1_vect)
+{
+
+ // Serial.print("interrupt 1 works \n");
+  if((digitalRead(button2Pin)) == LOW)
+  {
+    buttonState2 = HIGH;
+  }
+
+   
+}
+
+
 void loop()
 {
 //reading1 = digitalRead(button1Pin);
@@ -54,6 +70,11 @@ void loop()
     if((digitalRead(button1Pin)) == HIGH)
   {
     buttonState1 = LOW;
+  }
+  
+ if((digitalRead(button2Pin)) == HIGH)
+  {
+    buttonState2 = LOW;
   }
 
     // if the button state has changed:
