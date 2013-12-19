@@ -15,7 +15,11 @@ int lastButtonState2 = LOW;   // the previous reading from the input pin
 bool button1ChangeFlag = false;  
 bool currentStateFlag1 = false;
 long lastDebounceTime1 = 0; 
-long debounceDelay = 200; 
+bool button2ChangeFlag = false;  
+bool currentStateFlag2 = false;
+long lastDebounceTime2 = 0; 
+long debounceDelay1 = 200;
+long debounceDelay2 = 10;
 volatile int reading1 = LOW;
 volatile int reading2 = LOW;
 
@@ -34,7 +38,7 @@ void setup()
   EIMSK |= (1 << INT0);     // Enable external interrupt INT0
   EICRA |= (1 << ISC00);    // Trigger INT0 on any logical change
   EIMSK |= (1 << INT1);     // Enable external interrupt INT1
-  EICRA |= (1 << ISC10);    // Trigger INT1 on any logical change 
+  EICRA |= (1 << ISC10);    // Trigger INT1 on any logical change
  
 }
 
@@ -57,7 +61,7 @@ ISR(INT1_vect)
  // Serial.print("interrupt 1 works \n");
   if((digitalRead(button2Pin)) == LOW)
   {
-    buttonState2 = HIGH;
+   button2ChangeFlag = true; 
   }
 
    
@@ -70,13 +74,6 @@ void loop()
  // reading2 = digitalRead(button2Pin);
 //buttonState1 = reading1;
  // buttonState2 = reading2;
- 
-  
-  
- if((digitalRead(button2Pin)) == HIGH)
-  {
-    buttonState2 = LOW;
-  }
 
   if(button1ChangeFlag != currentStateFlag1)
   {
@@ -84,7 +81,13 @@ void loop()
       currentStateFlag1 = button1ChangeFlag;
   }
   
-  if((lastDebounceTime1 != 0) && (millis()-lastDebounceTime1) > debounceDelay)
+   if(button2ChangeFlag != currentStateFlag2)
+  {
+      lastDebounceTime2 = millis(); 
+      currentStateFlag2 = button2ChangeFlag;
+  }
+  
+  if((lastDebounceTime1 != 0) && (millis()-lastDebounceTime1) > debounceDelay1)
    {
      
      if (lastButtonState1 == HIGH)
@@ -98,6 +101,24 @@ void loop()
       lastDebounceTime1 = 0;
       button1ChangeFlag = false; 
       currentStateFlag1 = false; 
+    
+   }
+   
+   
+   if((lastDebounceTime2 != 0) && (millis()-lastDebounceTime2) > debounceDelay2)
+   {
+     
+     if (lastButtonState2 == HIGH)
+     {
+       buttonState2 = LOW;
+     }
+       if (lastButtonState2 == LOW)
+     {
+       buttonState2 = HIGH;
+     }
+      lastDebounceTime2 = 0;
+      button2ChangeFlag = false; 
+      currentStateFlag2 = false; 
     
    }
 
