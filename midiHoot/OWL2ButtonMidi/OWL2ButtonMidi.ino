@@ -12,7 +12,10 @@ int buttonState1 = 0;         // variable for reading the pushbutton status
 int buttonState2 = 0;         // variable for reading the pushbutton status
 int lastButtonState1 = LOW;   // the previous reading from the input pin
 int lastButtonState2 = LOW;   // the previous reading from the input pin
-
+bool button1ChangeFlag = false;  
+bool currentStateFlag1 = false;
+long lastDebounceTime1 = 0; 
+long debounceDelay = 200; 
 volatile int reading1 = LOW;
 volatile int reading2 = LOW;
 
@@ -29,19 +32,20 @@ void setup()
   pinMode(analogOutPin,   OUTPUT);  // set the button1 as an input to read
   sei();                    // Enable global interrupts
   EIMSK |= (1 << INT0);     // Enable external interrupt INT0
-  EICRA |= (1 << ISC00);    // Trigger INT0 on falling edge
-  EIMSK |= (1 << INT1);     // Enable external interrupt INT0
-  EICRA |= (1 << ISC10);    // Trigger INT0 on falling edge
+  EICRA |= (1 << ISC00);    // Trigger INT0 on any logical change
+  EIMSK |= (1 << INT1);     // Enable external interrupt INT1
+  EICRA |= (1 << ISC10);    // Trigger INT1 on falling edge
  
 }
 
 ISR(INT0_vect)
 {
 
- // Serial.print("interrupt 1 works \n");
+ //Serial.print("interrupt 1 works \n");
   if((digitalRead(button1Pin)) == LOW)
   {
-    buttonState1 = HIGH;
+   
+    button1ChangeFlag = true; 
   }
 
    
@@ -67,27 +71,47 @@ void loop()
 //buttonState1 = reading1;
  // buttonState2 = reading2;
  
-    if((digitalRead(button1Pin)) == HIGH)
-  {
-    buttonState1 = LOW;
-  }
+  
   
  if((digitalRead(button2Pin)) == HIGH)
   {
     buttonState2 = LOW;
   }
 
+  if(button1ChangeFlag != currentStateFlag1)
+  {
+      lastDebounceTime1 = millis(); 
+      currentStateFlag1 = button1ChangeFlag;
+  }
+  
+  if((lastDebounceTime1 != 0) && (millis()-lastDebounceTime1) > debounceDelay)
+   {
+     
+     if (lastButtonState1 == HIGH)
+     {
+       buttonState1 = LOW;
+     }
+       if (lastButtonState1 == LOW)
+     {
+       buttonState1 = HIGH;
+     }
+      lastDebounceTime1 = 0;
+      button1ChangeFlag = false; 
+      currentStateFlag1 = false; 
+    
+   }
+
     // if the button state has changed:
     if (buttonState1 != lastButtonState1) 
     {
       if(buttonState1 == HIGH)
       {
-        Serial.print("Button 1 Pressed \n");   
+        Serial.print("Button 1 ON \n");   
         digitalWrite(analogOutPin, HIGH);
       }
       else if(buttonState1 == LOW)
       {
-         Serial.print("Button 1 released \n"); 
+         Serial.print("Button 1 OFF \n"); 
          digitalWrite(analogOutPin, LOW);
       }
       lastButtonState1 = buttonState1;
