@@ -34,7 +34,7 @@ void setup()
   EIMSK |= (1 << INT0);     // Enable external interrupt INT0
   EICRA |= (1 << ISC00);    // Trigger INT0 on any logical change
   EIMSK |= (1 << INT1);     // Enable external interrupt INT1
-  EICRA |= (1 << ISC10);    // Trigger INT1 on falling edge
+  EICRA |= (1 << ISC10);    // Trigger INT1 on any logical change 
  
 }
 
