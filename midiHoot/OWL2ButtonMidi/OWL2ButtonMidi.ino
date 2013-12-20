@@ -3,6 +3,8 @@
 #include < avr/io.h >
 // ISR interrupt service routine
 #include < avr/interrupt.h >
+//Midi Library 
+#include <MIDI.h>
 
 const int button1Pin = 2;// analog pin that button 1 is connect to
 const int button2Pin = 3; // analog pin that button 2 is connect to
@@ -25,8 +27,7 @@ long debounceDelay2 = 50;
 
 void setup()
 {
-  // initialize serial communications at 9600 bps:
-  Serial.begin(9600);
+ MIDI.begin(); // This sets to the MIDI baudrate (31250), sets the input to channel 1, enables thru
   pinMode(button1Pin, INPUT);  // set the button1 as an input to read
   pinMode(button2Pin, INPUT);
   digitalWrite(button1Pin, HIGH);    // Enable pullup resistor
@@ -41,38 +42,25 @@ void setup()
 }
 
 ISR(INT0_vect)
-{
-
- //Serial.print("interrupt 1 works \n");
- 
-   
+{  
     button1ChangeFlag = true; 
- 
-   
 }
 
 ISR(INT1_vect)
 {
-
- // Serial.print("interrupt 1 works \n");
-  
-   button2ChangeFlag = true; 
-  
-
-   
+   button2ChangeFlag = true;    
 }
 
 
 void loop()
 {
 
-
   if(button1ChangeFlag != currentStateFlag1)
   {
       lastDebounceTime1 = millis(); 
       currentStateFlag1 = button1ChangeFlag;
   }
-  
+
    if(button2ChangeFlag != currentStateFlag2)
   {
       lastDebounceTime2 = millis(); 
@@ -93,18 +81,15 @@ void loop()
       lastDebounceTime1 = 0;
       button1ChangeFlag = false; 
       currentStateFlag1 = false; 
-    
    }
    
    
    if((lastDebounceTime2 != 0) && (millis()-lastDebounceTime2) > debounceDelay2)
    {
-
      buttonState2 = digitalRead(button2Pin); 
-      lastDebounceTime2 = 0;
-      button2ChangeFlag = false; 
-      currentStateFlag2 = false; 
-    
+     lastDebounceTime2 = 0;
+     button2ChangeFlag = false; 
+     currentStateFlag2 = false; 
    }
 
     // if the button state has changed:
@@ -114,28 +99,35 @@ void loop()
       {
         Serial.print("Button 1 ON \n");   
         digitalWrite(analogOutPin, HIGH);
+        MIDI.send(NoteOn,60,100,01); 
       }
       else if(buttonState1 == LOW)
       {
          Serial.print("Button 1 OFF \n"); 
          digitalWrite(analogOutPin, LOW);
+          
       }
       lastButtonState1 = buttonState1;
     }
     
     
        if (buttonState2 != lastButtonState2) 
-    {
+    { byte C4  = 60; 
+        byte velocity = 100;
+        byte channel = 01;
     
        if(buttonState2 == LOW)
       {
+       
         Serial.print("Button 2 Pressed \n");   
         digitalWrite(analogOutPin, HIGH);
+        MIDI.send(NoteOn, C4, velocity, channel); 
       }
       else if(buttonState2 == HIGH)
       {
        Serial.print("Button 2 released \n"); 
        digitalWrite(analogOutPin, LOW);
+       MIDI.send(NoteOff, C4, velocity, channel); 
       }
       lastButtonState2 = buttonState2;
     }                
