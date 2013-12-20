@@ -19,9 +19,7 @@ bool button2ChangeFlag = false;
 bool currentStateFlag2 = false;
 long lastDebounceTime2 = 0; 
 long debounceDelay1 = 200;
-long debounceDelay2 = 10;
-volatile int reading1 = LOW;
-volatile int reading2 = LOW;
+long debounceDelay2 = 50;
 
 
 
@@ -36,7 +34,7 @@ void setup()
   pinMode(analogOutPin,   OUTPUT);  // set the button1 as an input to read
   sei();                    // Enable global interrupts
   EIMSK |= (1 << INT0);     // Enable external interrupt INT0
-  EICRA |= (1 << ISC00);    // Trigger INT0 on any logical change
+  EICRA |= (1 << ISC01);    // Trigger INT0 on falling edge
   EIMSK |= (1 << INT1);     // Enable external interrupt INT1
   EICRA |= (1 << ISC10);    // Trigger INT1 on any logical change
  
@@ -46,12 +44,10 @@ ISR(INT0_vect)
 {
 
  //Serial.print("interrupt 1 works \n");
-  if((digitalRead(button1Pin)) == LOW)
-  {
+ 
    
     button1ChangeFlag = true; 
-  }
-
+ 
    
 }
 
@@ -59,10 +55,9 @@ ISR(INT1_vect)
 {
 
  // Serial.print("interrupt 1 works \n");
-  if((digitalRead(button2Pin)) == LOW)
-  {
+  
    button2ChangeFlag = true; 
-  }
+  
 
    
 }
@@ -70,10 +65,7 @@ ISR(INT1_vect)
 
 void loop()
 {
-//reading1 = digitalRead(button1Pin);
- // reading2 = digitalRead(button2Pin);
-//buttonState1 = reading1;
- // buttonState2 = reading2;
+
 
   if(button1ChangeFlag != currentStateFlag1)
   {
@@ -107,15 +99,8 @@ void loop()
    
    if((lastDebounceTime2 != 0) && (millis()-lastDebounceTime2) > debounceDelay2)
    {
-     
-     if (lastButtonState2 == HIGH)
-     {
-       buttonState2 = LOW;
-     }
-       if (lastButtonState2 == LOW)
-     {
-       buttonState2 = HIGH;
-     }
+
+     buttonState2 = digitalRead(button2Pin); 
       lastDebounceTime2 = 0;
       button2ChangeFlag = false; 
       currentStateFlag2 = false; 
@@ -142,12 +127,12 @@ void loop()
        if (buttonState2 != lastButtonState2) 
     {
     
-       if(buttonState2 == HIGH)
+       if(buttonState2 == LOW)
       {
         Serial.print("Button 2 Pressed \n");   
         digitalWrite(analogOutPin, HIGH);
       }
-      else if(buttonState2 == LOW)
+      else if(buttonState2 == HIGH)
       {
        Serial.print("Button 2 released \n"); 
        digitalWrite(analogOutPin, LOW);
