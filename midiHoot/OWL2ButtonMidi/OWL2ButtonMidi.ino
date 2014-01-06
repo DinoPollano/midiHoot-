@@ -24,10 +24,10 @@ long debounceDelay1 = 200;
 long debounceDelay2 = 50;
 
 
-
+ 
 void setup()
 {
- MIDI.begin(); // This sets to the MIDI baudrate (31250), sets the input to channel 1, enables thru
+
   pinMode(button1Pin, INPUT);  // set the button1 as an input to read
   pinMode(button2Pin, INPUT);
   digitalWrite(button1Pin, HIGH);    // Enable pullup resistor
@@ -38,7 +38,8 @@ void setup()
   EICRA |= (1 << ISC01);    // Trigger INT0 on falling edge
   EIMSK |= (1 << INT1);     // Enable external interrupt INT1
   EICRA |= (1 << ISC10);    // Trigger INT1 on any logical change
- 
+  MIDI.begin(1); // This sets to the MIDI baudrate (31250), sets the input to channel 1, enables thru
+
 }
 
 ISR(INT0_vect)
@@ -95,39 +96,44 @@ void loop()
     // if the button state has changed:
     if (buttonState1 != lastButtonState1) 
     {
+      byte D4 = 61; 
+        byte velocity = 100;
+        byte channel = 1;
+    
       if(buttonState1 == HIGH)
       {
-        Serial.print("Button 1 ON \n");   
-        digitalWrite(analogOutPin, HIGH);
-        MIDI.send(NoteOn,60,100,01); 
+      //  Serial.print("Button 1 ON \n");   
+        //digitalWrite(analogOutPin, HIGH);
+        MIDI.send(NoteOn,D4, velocity, channel); 
       }
       else if(buttonState1 == LOW)
       {
-         Serial.print("Button 1 OFF \n"); 
-         digitalWrite(analogOutPin, LOW);
-          
+       //  Serial.print("Button 1 OFF \n"); 
+       //  digitalWrite(analogOutPin, LOW);
+        MIDI.send(NoteOn,D4, 0, channel); 
       }
       lastButtonState1 = buttonState1;
     }
     
     
        if (buttonState2 != lastButtonState2) 
-    { byte C4  = 60; 
+    {   
+        byte C4 = 60; 
         byte velocity = 100;
-        byte channel = 01;
+        byte channel = 1;
     
        if(buttonState2 == LOW)
       {
        
-        Serial.print("Button 2 Pressed \n");   
-        digitalWrite(analogOutPin, HIGH);
-        MIDI.send(NoteOn, C4, velocity, channel); 
+      //  Serial.print("Button 2 Pressed \n");   
+       // digitalWrite(analogOutPin, HIGH);
+        MIDI.send(NoteOn,C4, velocity, channel); 
       }
       else if(buttonState2 == HIGH)
       {
-       Serial.print("Button 2 released \n"); 
-       digitalWrite(analogOutPin, LOW);
-       MIDI.send(NoteOff, C4, velocity, channel); 
+       //Serial.print("Button 2 released \n"); 
+     //  digitalWrite(analogOutPin, LOW);
+       MIDI.send(NoteOn,C4, 0, channel); 
       }
       lastButtonState2 = buttonState2;
     }                
