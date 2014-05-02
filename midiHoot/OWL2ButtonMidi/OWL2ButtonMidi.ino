@@ -23,10 +23,9 @@ bool currentStateFlag1 = false;
 long lastDebounceTime1 = 0; 
 
 bool button2ChangeFlag = false;  
-bool currentStateFlag2 = false;
 long lastDebounceTime2 = 0; 
 
-long debounceDelay1 = 200;
+long debounceDelay1 = 100;
 long debounceDelay2 = 50;
 
 
@@ -53,7 +52,7 @@ void setup()
 ISR(INT0_vect)
 {  
     button1ChangeFlag = true; 
-    
+
 }
 
 ISR(INT1_vect)
@@ -67,15 +66,16 @@ ISR(INT1_vect)
 void loop()
 {
 
-  if(button1ChangeFlag != currentStateFlag1)
-  {
+  if(button1ChangeFlag != false)
+  { 
+       
       lastDebounceTime1 = millis(); 
-      currentStateFlag1 = button1ChangeFlag;
+      button1ChangeFlag = false;
   }
   
  
 
-   if(button2ChangeFlag != currentStateFlag2)
+   if(button2ChangeFlag != false)
   {
          
      lastDebounceTime2 = millis(); 
@@ -105,7 +105,7 @@ void loop()
      buttonState2 = digitalRead(button2Pin); 
      lastDebounceTime2 = 0;
      button2ChangeFlag = false; 
-     currentStateFlag2 = false; 
+
    }
 
     // if the button state has changed:
