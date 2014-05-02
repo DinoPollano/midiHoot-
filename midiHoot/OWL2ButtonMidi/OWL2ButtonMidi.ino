@@ -17,12 +17,15 @@ int buttonState1 = 0;         // variable for reading the pushbutton status
 int buttonState2 = 0;         // variable for reading the pushbutton status
 int lastButtonState1 = LOW;   // the previous reading from the input pin
 int lastButtonState2 = LOW;   // the previous reading from the input pin
+
 bool button1ChangeFlag = false;  
 bool currentStateFlag1 = false;
 long lastDebounceTime1 = 0; 
+
 bool button2ChangeFlag = false;  
 bool currentStateFlag2 = false;
 long lastDebounceTime2 = 0; 
+
 long debounceDelay1 = 200;
 long debounceDelay2 = 50;
 
@@ -42,19 +45,22 @@ void setup()
   EIMSK |= (1 << INT0);     // Enable external interrupt INT0
   EICRA |= (1 << ISC01);    // Trigger INT0 on falling edge
   EIMSK |= (1 << INT1);     // Enable external interrupt INT1
-  EICRA |= (1 << ISC10);    // Trigger INT1 on any logical change
-  MIDI.begin(1); // This sets to the MIDI baudrate (31250), sets the input to channel 1, enables thru
+  EICRA |= (1 << ISC10);  // Trigger INT1 on any logical change 
+ MIDI.begin(1); // This sets to the MIDI baudrate (31250), sets the input to channel 1, enables thru
 
 }
 
 ISR(INT0_vect)
 {  
     button1ChangeFlag = true; 
+    
 }
 
 ISR(INT1_vect)
 {
+   
    button2ChangeFlag = true;    
+
 }
 
 
@@ -66,11 +72,15 @@ void loop()
       lastDebounceTime1 = millis(); 
       currentStateFlag1 = button1ChangeFlag;
   }
+  
+ 
 
    if(button2ChangeFlag != currentStateFlag2)
   {
-      lastDebounceTime2 = millis(); 
-      currentStateFlag2 = button2ChangeFlag;
+         
+     lastDebounceTime2 = millis(); 
+     
+     button2ChangeFlag = false;
   }
   
   if((lastDebounceTime1 != 0) && (millis()-lastDebounceTime1) > debounceDelay1)
@@ -101,19 +111,17 @@ void loop()
     // if the button state has changed:
     if (buttonState1 != lastButtonState1) 
     {
-      byte D4 = 61; 
-        byte velocity = 100;
-        byte channel = 1;
+    
     
       if(buttonState1 == HIGH)
       {
         led1State = HIGH;
-        MIDI.send(NoteOn,D4, velocity, channel); 
+        MIDI.sendNoteOn(52, 127, 1); 
       }
       else if(buttonState1 == LOW)
       {
        led1State = LOW;
-        MIDI.send(NoteOn,D4, 0, channel); 
+        MIDI.sendNoteOff(52, 0, 1); 
       }
       lastButtonState1 = buttonState1;
       digitalWrite(ledPin1,led1State); 
@@ -123,20 +131,18 @@ void loop()
     
        if (buttonState2 != lastButtonState2) 
     {   
-        byte C4 = 60; 
-        byte velocity = 100;
-        byte channel = 1;
+       
     
-       if(buttonState2 == LOW)
+       if(buttonState2 == LOW) 
       {
-       led2State = HIGH;
-        MIDI.send(NoteOn,C4, velocity, channel); 
+      led2State = HIGH;
+       MIDI.sendNoteOn(42, 127, 1); 
       }
-      else if(buttonState2 == HIGH)
+      else if(buttonState2 == HIGH) 
       {
      
-     led2State = LOW;
-       MIDI.send(NoteOn,C4, 0, channel); 
+    led2State = LOW;
+       MIDI.sendNoteOff(42, 0, 1); 
       }
       
       lastButtonState2 = buttonState2;
