@@ -155,7 +155,7 @@ void loop()
       if(buttonState1 == HIGH)
       {
         led1State = HIGH;
-        MIDI.sendNoteOn(52, 127, 1); 
+        MIDI.sendNoteOn(32, 127, 1); 
       }
       else if(buttonState1)
       {
@@ -175,14 +175,16 @@ void loop()
        if(buttonState2 == LOW || midiButton2 != lastMidiButton2State) 
       {
       led2State = HIGH;
-       MIDI.sendNoteOn(42, 127, 1); 
        
+         MIDI.sendNoteOn(62, 127, 1);
+        
+                 
       }
       else if(buttonState2 == HIGH || midiButton2 != lastMidiButton2State ) 
       {
      
     led2State = LOW;
-       MIDI.sendNoteOff(42, 0, 1); 
+       MIDI.sendNoteOff(62, 0, 1); 
       }
       
       lastButtonState2 = buttonState2;
