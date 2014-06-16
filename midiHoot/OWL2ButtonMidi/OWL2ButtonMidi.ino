@@ -23,13 +23,14 @@ bool currentStateFlag1 = false;
 long lastDebounceTime1 = 0; 
 
 bool button2ChangeFlag = false; 
-bool midiButton2 = false;
-bool lastMidiButton2State = false; 
 long lastDebounceTime2 = 0; 
 
 long debounceDelay1 = 100;
 long debounceDelay2 = 50;
 
+bool midiTrigger1 = false; 
+bool midiTrigger2 = false; 
+bool lastMidiTrigger2 = false;
 
  
 void setup()
@@ -48,6 +49,7 @@ void setup()
   EIMSK |= (1 << INT1);     // Enable external interrupt INT1
   EICRA |= (1 << ISC10);  // Trigger INT1 on any logical change 
  MIDI.setHandleNoteOn(HandleNoteOn); 
+ MIDI.setHandleNoteOff(HandleNoteOff); 
  MIDI.begin(1); // This sets to the MIDI baudrate (31250), sets the input to channel 1, enables thru
 
 }
@@ -64,8 +66,8 @@ ISR(INT1_vect)
    button2ChangeFlag = true;    
 
 }
-
-void HandleNoteOn(byte channel, byte pitch, byte velocity)
+/*****************************MIDI IN***********************/
+void HandleNoteOn(byte channel, byte pitch, byte velocity) // note on
 {
       switch(pitch)
       {
@@ -74,24 +76,28 @@ void HandleNoteOn(byte channel, byte pitch, byte velocity)
          
           if( velocity > 1)
           {
-         button1ChangeFlag  = true; 
+            if(midiTrigger1 == false)
+            {
+         midiTrigger1 = true; 
+            }
+            else
+              {
+                midiTrigger1 = false;
+              }
           }
           break; 
         }
+        
         case 42: //button2 
         {
-           if( velocity > 1)
+           if( velocity >= 1)
           {
-           button2ChangeFlag = true; 
-           midiButton2 = true; 
+           midiTrigger2 = true; 
           }
-           if( velocity == 0 )
-          {
-           button2ChangeFlag = true; 
-           midiButton2 = false; 
-          }
+        
           break;
         }
+        
         default:
         {
           break; 
@@ -99,7 +105,30 @@ void HandleNoteOn(byte channel, byte pitch, byte velocity)
       }
 }
 
+  void HandleNoteOff(byte channel, byte pitch, byte velocity)  // note off
+  {
+     switch(pitch)
+        {
+          
+          case 42: //button2 
+          {
+           
+             if( velocity == 0 )
+            {
+             midiTrigger2 = false;
+            }
+            break;
+          }
+          default:
+          {
+            break; 
+          }
+        }
+  }
 
+/*****************Midi in************/ 
+
+/**********************************main*************************/
 void loop()
 {
 
@@ -148,48 +177,50 @@ void loop()
    }
 
     // if the button state has changed:
-    if (buttonState1 != lastButtonState1) 
+    if (buttonState1 != lastButtonState1 || midiTrigger1 == true ) 
     {
     
     
-      if(buttonState1 == HIGH)
+      if(lastButtonState1 == LOW || midiTrigger1 == true)
       {
         led1State = HIGH;
         MIDI.sendNoteOn(32, 127, 1); 
+        
       }
-      else if(buttonState1)
+     else if(lastButtonState1 == HIGH || midiTrigger1 == false)
       {
        led1State = LOW;
         MIDI.sendNoteOff(52, 0, 1); 
       }
       lastButtonState1 = buttonState1;
       digitalWrite(ledPin1,led1State); 
+     
       
     }
     
     
-       if (buttonState2 != lastButtonState2  ) 
+       if (buttonState2 != lastButtonState2 || midiTrigger2 != lastMidiTrigger2 ) 
     {   
        
   
-       if(buttonState2 == LOW || midiButton2 != lastMidiButton2State) 
+       if(buttonState2 == LOW || midiTrigger2 == true ) 
       {
       led2State = HIGH;
        
-         MIDI.sendNoteOn(62, 127, 1);
+        MIDI.sendNoteOn(62, 127, 1);
         
                  
       }
-      else if(buttonState2 == HIGH || midiButton2 != lastMidiButton2State ) 
+      else if(buttonState2 == HIGH && midiTrigger2 == false) 
       {
      
     led2State = LOW;
        MIDI.sendNoteOff(62, 0, 1); 
       }
-      
+       digitalWrite(ledPin2,led2State); 
       lastButtonState2 = buttonState2;
-      lastMidiButton2State = midiButton2; 
+      lastMidiTrigger2 = midiTrigger2; 
     }                
 }
 
-
+/************main********/ 
