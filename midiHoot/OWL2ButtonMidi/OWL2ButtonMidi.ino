@@ -6,6 +6,10 @@
 //Midi Library 
 #include <MIDI.h>
 
+#define C4 60
+#define A4 69 
+
+
 const int button1Pin = 2;// analog pin that button 1 is connect to, button 1 is toggle 
 const int button2Pin = 3; // analog pin that button 2 is connect to, button 2 is momentary 
 const int ledPin1 =  8;  
@@ -30,8 +34,8 @@ long debounceDelay2 = 50;
 
 bool midiTrigger1 = false; 
 bool midiTrigger2 = false; 
+bool lastMidiTrigger1 = false;
 bool lastMidiTrigger2 = false;
-
  
 void setup()
 {
@@ -51,13 +55,14 @@ void setup()
  MIDI.setHandleNoteOn(HandleNoteOn); 
  MIDI.setHandleNoteOff(HandleNoteOff); 
  MIDI.begin(1); // This sets to the MIDI baudrate (31250), sets the input to channel 1, enables thru
+ // Serial.begin(9600); 
 
 }
-
-ISR(INT0_vect)
+  /********INTERRUPT********/
+ISR(INT0_vect)        
 {  
     button1ChangeFlag = true; 
-
+   // Serial.print("flag \n");
 }
 
 ISR(INT1_vect)
@@ -71,24 +76,29 @@ void HandleNoteOn(byte channel, byte pitch, byte velocity) // note on
 {
       switch(pitch)
       {
-        case 52: //button1
+        case C4 : //button1
         {
          
-          if( velocity > 1)
+          if( velocity >= 1)
           {
-            if(midiTrigger1 == false)
+            switch(midiTrigger1)
             {
-         midiTrigger1 = true; 
-            }
-            else
+              case true:
+                {
+                  midiTrigger1 = false; 
+                  break;
+                }
+              case false:
               {
-                midiTrigger1 = false;
+                  midiTrigger1 = true;
+                  break;
               }
+            }
           }
           break; 
         }
         
-        case 42: //button2 
+        case A4: //button2 
         {
            if( velocity >= 1)
           {
@@ -110,7 +120,7 @@ void HandleNoteOn(byte channel, byte pitch, byte velocity) // note on
      switch(pitch)
         {
           
-          case 42: //button2 
+          case A4: //button2 
           {
            
              if( velocity == 0 )
@@ -151,16 +161,20 @@ void loop()
      button2ChangeFlag = false;
   }
   
-  if((lastDebounceTime1 != 0) && (millis()-lastDebounceTime1) > debounceDelay1)
+  
+                     /****DEBOUNCING***/
+  if((lastDebounceTime1 != 0) && (millis()-lastDebounceTime1) > debounceDelay1)  
    {
      
      if (lastButtonState1 == HIGH)
      {
        buttonState1 = LOW;
+      // Serial.print("debouncing stage - button off \n");
      }
-       if (lastButtonState1 == LOW)
+     if (lastButtonState1 == LOW)
      {
        buttonState1 = HIGH;
+       // Serial.print("debouncing stage - button on \n");
      }
       lastDebounceTime1 = 0;
       button1ChangeFlag = false; 
@@ -176,26 +190,29 @@ void loop()
 
    }
 
+                               /**OUTPUT**/
+
     // if the button state has changed:
-    if (buttonState1 != lastButtonState1 || midiTrigger1 == true ) 
+    if (buttonState1 != lastButtonState1 || midiTrigger1 != lastMidiTrigger1 )   
     {
     
     
       if(lastButtonState1 == LOW || midiTrigger1 == true)
       {
         led1State = HIGH;
-        MIDI.sendNoteOn(32, 127, 1); 
-        
+        MIDI.sendNoteOn(C4, 127, 1); 
+       // Serial.print(" output stage - button on \n"); 
       }
      else if(lastButtonState1 == HIGH || midiTrigger1 == false)
       {
        led1State = LOW;
-        MIDI.sendNoteOff(52, 0, 1); 
+        MIDI.sendNoteOff(C4, 0, 1); 
+        //Serial.print(" Output stage - button off \n");
       }
-      lastButtonState1 = buttonState1;
-      digitalWrite(ledPin1,led1State); 
-     
       
+      lastButtonState1 = buttonState1;
+     lastMidiTrigger1 = midiTrigger1;
+        digitalWrite(ledPin1,led1State); 
     }
     
     
@@ -203,19 +220,19 @@ void loop()
     {   
        
   
-       if(buttonState2 == LOW || midiTrigger2 == true ) 
+       if(buttonState2 == LOW || midiTrigger2 == true) 
       {
       led2State = HIGH;
        
-        MIDI.sendNoteOn(62, 127, 1);
+        MIDI.sendNoteOn(A4, 127, 1);
         
                  
       }
       else if(buttonState2 == HIGH && midiTrigger2 == false) 
       {
      
-    led2State = LOW;
-       MIDI.sendNoteOff(62, 0, 1); 
+        led2State = LOW;
+         MIDI.sendNoteOff(A4, 0, 1); 
       }
        digitalWrite(ledPin2,led2State); 
       lastButtonState2 = buttonState2;
