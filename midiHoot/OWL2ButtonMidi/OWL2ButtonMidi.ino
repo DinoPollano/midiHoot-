@@ -6,8 +6,10 @@
 //Midi Library 
 #include <MIDI.h>
 
-#define C4 60
-#define A4 69 
+#define C4 60 //input
+#define C3 48 //output
+#define A4 69 //input
+#define A3 57 //output
 
 
 const int button1Pin = 2;// analog pin that button 1 is connect to, button 1 is toggle 
@@ -17,14 +19,14 @@ int led1State = LOW;
 const int ledPin2 =  9;  
 int led2State = LOW;
 
-int buttonState1 = 0;         // variable for reading the pushbutton status
+
 int buttonState2 = 0;         // variable for reading the pushbutton status
-int lastButtonState1 = LOW;   // the previous reading from the input pin
 int lastButtonState2 = LOW;   // the previous reading from the input pin
 
 bool button1ChangeFlag = false;  
-bool currentStateFlag1 = false;
 long lastDebounceTime1 = 0; 
+bool button1Toggle = false; 
+bool lastButton1Toggle = false; 
 
 bool button2ChangeFlag = false; 
 long lastDebounceTime2 = 0; 
@@ -32,9 +34,8 @@ long lastDebounceTime2 = 0;
 long debounceDelay1 = 100;
 long debounceDelay2 = 50;
 
-bool midiTrigger1 = false; 
+
 bool midiTrigger2 = false; 
-bool lastMidiTrigger1 = false;
 bool lastMidiTrigger2 = false;
  
 void setup()
@@ -81,18 +82,24 @@ void HandleNoteOn(byte channel, byte pitch, byte velocity) // note on
          
           if( velocity >= 1)
           {
-            switch(midiTrigger1)
+            switch(lastButton1Toggle)
             {
               case true:
                 {
-                  midiTrigger1 = false; 
+                  button1Toggle = false; 
+                   
                   break;
                 }
               case false:
-              {
-                  midiTrigger1 = true;
+                {
+                  button1Toggle = true;
                   break;
-              }
+                }
+              
+              default:
+                {
+                  break;
+                }
             }
           }
           break; 
@@ -166,19 +173,19 @@ void loop()
   if((lastDebounceTime1 != 0) && (millis()-lastDebounceTime1) > debounceDelay1)  
    {
      
-     if (lastButtonState1 == HIGH)
+     if (lastButton1Toggle == true)
      {
-       buttonState1 = LOW;
+       button1Toggle = false;
       // Serial.print("debouncing stage - button off \n");
      }
-     if (lastButtonState1 == LOW)
+     if (lastButton1Toggle == false)
      {
-       buttonState1 = HIGH;
+      button1Toggle = true;
        // Serial.print("debouncing stage - button on \n");
      }
       lastDebounceTime1 = 0;
       button1ChangeFlag = false; 
-      currentStateFlag1 = false; 
+    
    }
    
    
@@ -193,26 +200,27 @@ void loop()
                                /**OUTPUT**/
 
     // if the button state has changed:
-    if (buttonState1 != lastButtonState1 || midiTrigger1 != lastMidiTrigger1 )   
+    if ( button1Toggle != lastButton1Toggle )   
     {
-    
-    
-      if(lastButtonState1 == LOW || midiTrigger1 == true)
+      
+
+      if(  button1Toggle == true )
       {
         led1State = HIGH;
-        MIDI.sendNoteOn(C4, 127, 1); 
+        MIDI.sendNoteOn(C3, 127, 1); 
        // Serial.print(" output stage - button on \n"); 
       }
-     else if(lastButtonState1 == HIGH || midiTrigger1 == false)
+     else if(button1Toggle == false)
       {
        led1State = LOW;
-        MIDI.sendNoteOff(C4, 0, 1); 
+        MIDI.sendNoteOff(C3, 0, 1); 
         //Serial.print(" Output stage - button off \n");
       }
-      
-      lastButtonState1 = buttonState1;
-     lastMidiTrigger1 = midiTrigger1;
+
+    
         digitalWrite(ledPin1,led1State); 
+       lastButton1Toggle = button1Toggle;
+      
     }
     
     
@@ -224,7 +232,7 @@ void loop()
       {
       led2State = HIGH;
        
-        MIDI.sendNoteOn(A4, 127, 1);
+        MIDI.sendNoteOn(A3, 127, 1);
         
                  
       }
@@ -232,12 +240,12 @@ void loop()
       {
      
         led2State = LOW;
-         MIDI.sendNoteOff(A4, 0, 1); 
+         MIDI.sendNoteOff(A3, 0, 1); 
       }
        digitalWrite(ledPin2,led2State); 
       lastButtonState2 = buttonState2;
       lastMidiTrigger2 = midiTrigger2; 
-    }                
+    }               
 }
 
 /************main********/ 
