@@ -11,7 +11,17 @@
 #define A4 69 //input
 #define A3 57 //output
 
+#define PATCH_PARAMETER_A 20
+#define PATCH_PARAMETER_B 21
+#define PATCH_PARAMETER_C 22
+#define PATCH_PARAMETER_D 23
+#define PATCH_PARAMETER_E 24
 
+bool midiAssignMode = false; 
+
+
+byte storedValues[5] = {0,0,0,0,0}; 
+byte pedalValues[5] = {0,0,0,0,0}; 
 const int button1Pin = 2;// analog pin that button 1 is connect to, button 1 is toggle 
 const int button2Pin = 3; // analog pin that button 2 is connect to, button 2 is momentary 
 const int ledPin1 =  8;  
@@ -54,7 +64,8 @@ void setup()
   EIMSK |= (1 << INT1);     // Enable external interrupt INT1
   EICRA |= (1 << ISC10);  // Trigger INT1 on any logical change 
  MIDI.setHandleNoteOn(HandleNoteOn); 
- MIDI.setHandleNoteOff(HandleNoteOff); 
+ MIDI.setHandleNoteOff(HandleNoteOff);
+ MIDI.setHandleControlChange(HandleControlChange);  
  MIDI.begin(1); // This sets to the MIDI baudrate (31250), sets the input to channel 1, enables thru
  // Serial.begin(9600); 
 
@@ -73,6 +84,85 @@ ISR(INT1_vect)
 
 }
 /*****************************MIDI IN***********************/
+void HandleControlChange(byte channel, byte number, byte value)
+{
+  if(midiAssignMode)
+ {
+   switch(Number)
+   {
+     case PATCH_PARAMETER_A:
+     {
+        storedValues[0] = value;
+       break; 
+     }
+     case PATCH_PARAMETER_B:
+     {
+        storedValues[1] = value;
+       break; 
+     }
+     case PATCH_PARAMETER_C:
+     {
+        storedValues[2] = value;
+       break; 
+     }
+     case PATCH_PARAMETER_D:
+     {
+        storedValues[3] = value;
+       break; 
+     }
+     case PATCH_PARAMETER_E:
+     {
+        storedValues[4] = value;
+       break; 
+     }  
+     default:
+     {
+       break; 
+     }
+   }
+   
+ }
+ else
+ {
+   
+    switch(Number)
+   {
+     case PATCH_PARAMETER_A:
+     {
+        pedalValues[0] = value;
+       break; 
+     }
+     case PATCH_PARAMETER_B:
+     {
+        pedalValues[1] = value;
+       break; 
+     }
+     case PATCH_PARAMETER_C:
+     {
+        pedalValues[2] = value;
+       break; 
+     }
+     case PATCH_PARAMETER_D:
+     {
+        pedalValues[3] = value;
+       break; 
+     }
+     case PATCH_PARAMETER_E:
+     {
+        pedalValues[4] = value;
+       break; 
+     }  
+     default:
+     {
+       break; 
+     }
+   }
+ }
+ 
+ 
+  
+}
+
 void HandleNoteOn(byte channel, byte pitch, byte velocity) // note on
 {
       switch(pitch)
@@ -144,6 +234,48 @@ void HandleNoteOn(byte channel, byte pitch, byte velocity) // note on
   }
 
 /*****************Midi in************/ 
+
+void SENDCC(byte Values[5])
+{
+  for(int i = 0, => 5)
+ {
+    switch(i)
+    {
+      case 0:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_A,Values[0],1);
+        break; 
+      }
+      case 1:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_B,Values[1],1);
+        break; 
+      }
+      case 2:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_C,Values[2],1);
+        break; 
+      }
+      case 3:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_D,Values[3],1);
+        break; 
+      }
+       case 4:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_E,Values[4],1);
+        break; 
+      }
+      default:
+      {
+        break; 
+      }
+    }
+   
+ } 
+}
+
+
 
 /**********************************main*************************/
 void loop()
