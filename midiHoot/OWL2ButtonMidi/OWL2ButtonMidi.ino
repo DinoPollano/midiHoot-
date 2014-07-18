@@ -21,7 +21,7 @@
 #define LED_ON 0 
 #define LED_SLOW 1 
 #define LED_FAST 2
-
+#define LED_OFF 3
 
 bool midiAssignMode = false; 
 
@@ -91,7 +91,210 @@ ISR(INT1_vect)
    button2ChangeFlag = true;    
 
 }
-/*****************************MIDI IN***********************/
+
+
+
+
+/**********************************main*************************/
+void loop()
+{
+
+ MIDI.read();
+
+if(midiAssignMode == true)
+{
+  LED_FUNCTION(ledPin1,LED_SLOW);
+  LED_FUNCTION(ledPin2,LED_SLOW);
+}
+
+
+if(midiAssignMode == true && button1ChangeFlag == true)
+{
+  buttonState2 = false;
+ button1ChangeFlag = false;
+  midiAssignMode = false;
+  
+}
+
+if( button1Toggle == true && buttonState2 == true)
+{
+  
+  midiAssignMode = true; 
+  button1Toggle = false;
+   buttonState2 = false;
+}
+  
+  if(button1ChangeFlag != false)
+  { 
+     
+      lastDebounceTime1 = millis(); 
+      button1ChangeFlag = false;
+  }
+ 
+
+   if(button2ChangeFlag != false)
+  {
+         
+     lastDebounceTime2 = millis(); 
+     
+     button2ChangeFlag = false;
+  }
+  
+  
+                     /****DEBOUNCING***/
+  if((lastDebounceTime1 != 0) && (millis()-lastDebounceTime1) > debounceDelay1)  
+   {
+     
+     if (lastButton1Toggle == true)
+     {
+       button1Toggle = false;
+      // Serial.print("debouncing stage - button off \n");
+     }
+     if (lastButton1Toggle == false)
+     {
+      button1Toggle = true;
+       // Serial.print("debouncing stage - button on \n");
+     }
+      lastDebounceTime1 = 0;
+      button1ChangeFlag = false; 
+    
+   }
+   
+   
+   if((lastDebounceTime2 != 0) && (millis()-lastDebounceTime2) > debounceDelay2)
+   {
+      midiAssignMode = false;
+     buttonState2 = digitalRead(button2Pin); 
+     lastDebounceTime2 = 0;
+     button2ChangeFlag = false; 
+
+   }
+
+                               /**OUTPUT**/
+ if(midiAssignMode != true)
+ {
+    // if the button state has changed:
+    if ( button1Toggle != lastButton1Toggle )   
+    {
+      
+
+      if(  button1Toggle == true )
+      {
+        //led1State = HIGH;
+                LED_FUNCTION(ledPin1, LED_ON); //on
+        MIDI.sendNoteOn(C3, 127, 1); 
+       // Serial.print(" output stage - button on \n"); 
+      }
+     else if(button1Toggle == false)
+      {
+      // led1State = LOW;
+        LED_FUNCTION(ledPin1, LED_OFF); //off
+        MIDI.sendNoteOff(C3, 0, 1); 
+        //Serial.print(" Output stage - button off \n");
+      }
+
+    
+       // digitalWrite(ledPin1,led1State); 
+       lastButton1Toggle = button1Toggle;
+      
+    }
+    
+    
+       if (buttonState2 != lastButtonState2 || midiTrigger2 != lastMidiTrigger2 ) 
+    {   
+       
+  
+       if(buttonState2 == LOW || midiTrigger2 == true) 
+      {
+      //led2State = HIGH;
+        LED_FUNCTION(ledPin2,LED_ON); // On
+        MIDI.sendNoteOn(A3, 127, 1);
+        
+                 
+      }
+      else if(buttonState2 == HIGH && midiTrigger2 == false) 
+      {
+     
+        //led2State = LOW;
+         MIDI.sendNoteOff(A3, 0, 1); 
+         LED_FUNCTION(ledPin2,LED_OFF); // Off 
+      }
+      // digitalWrite(ledPin2,led2State); 
+      lastButtonState2 = buttonState2;
+      lastMidiTrigger2 = midiTrigger2; 
+    }   
+ }    
+}
+
+/************main********/ 
+
+
+
+void LED_FUNCTION(int LED, int mode)
+{
+  
+  switch(mode)
+  {
+    case LED_ON:
+    {
+      
+      if( !digitalRead(LED) )
+      {
+        digitalWrite(LED, HIGH);
+      }
+      else if( digitalRead(LED))
+      {
+        digitalWrite(LED, LOW); 
+      }
+      break; 
+    }
+    
+    case LED_OFF:
+    {
+      
+      if( !digitalRead(LED) )
+      {
+        digitalWrite(LED, LOW);
+      }
+      else if( digitalRead(LED))
+      {
+        digitalWrite(LED, LOW); 
+      }
+      break; 
+    }
+    
+    case LED_SLOW:
+    {
+      digitalWrite(LED,HIGH);
+      delay(500); 
+      digitalWrite(LED,LOW);
+      break;
+ 
+    }
+     case LED_FAST:
+    {
+      digitalWrite(LED,HIGH);
+      delay(250); 
+      digitalWrite(LED,LOW);
+      delay(250);
+       digitalWrite(LED,HIGH);
+      delay(250); 
+      digitalWrite(LED,LOW);
+      delay(250);
+     break;
+    }
+    
+    default:
+    {
+      break; 
+    }
+  }
+  
+}
+
+/*****************************MIDI***********************/
+
+/******CC********/
 void HandleControlChange(byte channel, byte number, byte value)
 {
   if(midiAssignMode)
@@ -171,6 +374,48 @@ void HandleControlChange(byte channel, byte number, byte value)
   
 }
 
+void SENDCC(byte Values[5])
+{
+  for(int i = 0; i >= 4;)
+ {
+    switch(i)
+    {
+      case 0:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_A,Values[0],1);
+        break; 
+      }
+      case 1:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_B,Values[1],1);
+        break; 
+      }
+      case 2:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_C,Values[2],1);
+        break; 
+      }
+      case 3:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_D,Values[3],1);
+        break; 
+      }
+       case 4:
+      {
+        MIDI.sendControlChange(PATCH_PARAMETER_E,Values[4],1);
+        break; 
+      }
+      default:
+      {
+        break; 
+      }
+    }
+   
+ } 
+}
+
+
+/*****CC****/
 void HandleNoteOn(byte channel, byte pitch, byte velocity) // note on
 {
       switch(pitch)
@@ -241,223 +486,6 @@ void HandleNoteOn(byte channel, byte pitch, byte velocity) // note on
         }
   }
 
-/*****************Midi in************/ 
+/*****************Midi************/ 
 
 
-
-
-
-/**********************************main*************************/
-void loop()
-{
-
- MIDI.read();
-
-if(midiAssignMode == true)
-{
-  LED_FUNCTION(ledPin1,LED_SLOW);
-  LED_FUNCTION(ledPin2,LED_SLOW);
-}
-
-  
-  if(button1ChangeFlag != false)
-  { 
-     
-      lastDebounceTime1 = millis(); 
-      button1ChangeFlag = false;
-  }
- 
-
-   if(button2ChangeFlag != false)
-  {
-         
-     lastDebounceTime2 = millis(); 
-     
-     button2ChangeFlag = false;
-  }
-  
-  
-                     /****DEBOUNCING***/
-  if((lastDebounceTime1 != 0) && (millis()-lastDebounceTime1) > debounceDelay1)  
-   {
-     
-     if (lastButton1Toggle == true)
-     {
-       button1Toggle = false;
-      // Serial.print("debouncing stage - button off \n");
-     }
-     if (lastButton1Toggle == false)
-     {
-      button1Toggle = true;
-       // Serial.print("debouncing stage - button on \n");
-     }
-      lastDebounceTime1 = 0;
-      button1ChangeFlag = false; 
-    
-   }
-   
-   
-   if((lastDebounceTime2 != 0) && (millis()-lastDebounceTime2) > debounceDelay2)
-   {
-      midiAssignMode = false;
-     buttonState2 = digitalRead(button2Pin); 
-     lastDebounceTime2 = 0;
-     button2ChangeFlag = false; 
-
-   }
-
-                               /**OUTPUT**/
- if(midiAssignMode != false)
- {
-    // if the button state has changed:
-    if ( button1Toggle != lastButton1Toggle )   
-    {
-      
-
-      if(  button1Toggle == true )
-      {
-        //led1State = HIGH;
-                LED_FUNCTION(ledPin1, LED_ON); //on
-        MIDI.sendNoteOn(C3, 127, 1); 
-       // Serial.print(" output stage - button on \n"); 
-      }
-     else if(button1Toggle == false)
-      {
-      // led1State = LOW;
-        LED_FUNCTION(ledPin1, LED_ON); //off
-        MIDI.sendNoteOff(C3, 0, 1); 
-        //Serial.print(" Output stage - button off \n");
-      }
-
-    
-       // digitalWrite(ledPin1,led1State); 
-       lastButton1Toggle = button1Toggle;
-      
-    }
-    
-    
-       if (buttonState2 != lastButtonState2 || midiTrigger2 != lastMidiTrigger2 ) 
-    {   
-       
-  
-       if(buttonState2 == LOW || midiTrigger2 == true) 
-      {
-      //led2State = HIGH;
-        LED_FUNCTION(ledPin2,LED_ON); // On
-        MIDI.sendNoteOn(A3, 127, 1);
-        
-                 
-      }
-      else if(buttonState2 == HIGH && midiTrigger2 == false) 
-      {
-     
-        //led2State = LOW;
-         MIDI.sendNoteOff(A3, 0, 1); 
-         LED_FUNCTION(ledPin2,LED_ON); // Off 
-      }
-      // digitalWrite(ledPin2,led2State); 
-      lastButtonState2 = buttonState2;
-      lastMidiTrigger2 = midiTrigger2; 
-    }   
- }    
-}
-
-/************main********/ 
-
-void SENDCC(byte Values[5])
-{
-  for(int i = 0; i >= 4;)
- {
-    switch(i)
-    {
-      case 0:
-      {
-        MIDI.sendControlChange(PATCH_PARAMETER_A,Values[0],1);
-        break; 
-      }
-      case 1:
-      {
-        MIDI.sendControlChange(PATCH_PARAMETER_B,Values[1],1);
-        break; 
-      }
-      case 2:
-      {
-        MIDI.sendControlChange(PATCH_PARAMETER_C,Values[2],1);
-        break; 
-      }
-      case 3:
-      {
-        MIDI.sendControlChange(PATCH_PARAMETER_D,Values[3],1);
-        break; 
-      }
-       case 4:
-      {
-        MIDI.sendControlChange(PATCH_PARAMETER_E,Values[4],1);
-        break; 
-      }
-      default:
-      {
-        break; 
-      }
-    }
-   
- } 
-}
-
-void LED_FUNCTION(int LED, int mode)
-{
-  
-  switch(mode)
-  {
-    case LED_ON:
-    {
-      
-      if( !digitalRead(LED) )
-      {
-        digitalWrite(LED, HIGH);
-      }
-      else if( digitalRead(LED))
-      {
-        digitalWrite(LED, LOW); 
-      }
-      break; 
-    }
-    
-    case LED_SLOW:
-    {
-      digitalWrite(LED,HIGH);
-      delay(500); 
-      digitalWrite(LED,LOW);
-      delay(500);
-       digitalWrite(LED,HIGH);
-      delay(500); 
-      digitalWrite(LED,LOW);
-      delay(500);
-      digitalWrite(LED,HIGH);
-      delay(500); 
-      digitalWrite(LED,LOW);
-      break; 
-    }
-     case LED_FAST:
-    {
-      digitalWrite(LED,HIGH);
-      delay(250); 
-      digitalWrite(LED,LOW);
-      delay(250);
-       digitalWrite(LED,HIGH);
-      delay(250); 
-      digitalWrite(LED,LOW);
-      delay(250);
-      digitalWrite(LED,HIGH);
-      delay(250); 
-      digitalWrite(LED,LOW);
-      break; 
-    }
-    
-    default:
-    {
-      break; 
-    }
-  }
-  
-}
