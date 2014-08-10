@@ -31,11 +31,7 @@ byte storedValues[5] = {0,0,0,0,0};
 byte pedalValues[5] = {127,127,127,127,127}; 
 const int button1Pin = 2;// analog pin that button 1 is connect to, button 1 is toggle 
 const int button2Pin = 3; // analog pin that button 2 is connect to, button 2 is momentary 
-/*const int ledPin1 =  8;  
-int led1State = LOW;
-const int ledPin2 =  9;  
-int led2State = LOW;
-*/
+
 
 int buttonState2 = 0;         // variable for reading the pushbutton status
 int lastButtonState2 = LOW;   // the previous reading from the input pin
@@ -53,7 +49,7 @@ long debounceDelay2 = 50;
 
 
 
-bool test = true;  
+bool test = false;  
  
 void setup()
 {
@@ -103,7 +99,7 @@ void loop()
  MIDI.read();
 if(test)
 {
-  SENDCC(pedalValues);
+  SENDCC(  pedalValues);
   test = false; 
 }
 if(midiAssignMode)
@@ -216,6 +212,7 @@ if(midiAssignMode == true && button1ChangeFlag == true)
        if(buttonState2 == LOW) 
       {
       //led2State = HIGH;
+       SENDCC(storedValues);
         LED_FUNCTION(ledPin2,LED_ON); // On
         //MIDI.sendNoteOn(A3, 127, 1);
         
@@ -226,6 +223,7 @@ if(midiAssignMode == true && button1ChangeFlag == true)
      
         //led2State = LOW;
          //MIDI.sendNoteOff(A3, 0, 1); 
+          SENDCC(pedalValues);      
          LED_FUNCTION(ledPin2,LED_OFF); // Off 
       }
       // digitalWrite(ledPin2,led2State); 
@@ -307,7 +305,7 @@ void HandleControlChange(byte channel, byte number, byte value)
 {
   if(midiAssignMode)
  {
-   LED_FUNCTION(ledPin1,LED_FAST);
+   LED_FUNCTION(ledPin1,LED_OFF);
    
    switch(number)
    {
@@ -341,8 +339,8 @@ void HandleControlChange(byte channel, byte number, byte value)
        break; 
      }
    }
-  
-   
+    delay(10); 
+    LED_FUNCTION(ledPin1,LED_ON);
   
  }
  else
@@ -386,44 +384,13 @@ void HandleControlChange(byte channel, byte number, byte value)
   
 }
 
-void SENDCC(byte Values[5])
+void SENDCC(byte Values[])
 {
-  for(int i = 0; i >= 4; i++)
- {
-    switch(i)
-    {
-      case 0:
-      {
-        MIDI.sendControlChange( PATCH_PARAMETER_A, Values[0],chnl);
-        break; 
-      }
-      case 1:
-      {
-        MIDI.sendControlChange( PATCH_PARAMETER_B, Values[1],chnl);
-        break; 
-      }
-      case 2:
-      {
-        MIDI.sendControlChange(  PATCH_PARAMETER_C, Values[2],chnl);
-        break; 
-      }
-      case 3:
-      {
+        MIDI.sendControlChange(PATCH_PARAMETER_A,Values[0],chnl);
+        MIDI.sendControlChange(PATCH_PARAMETER_B,Values[1],chnl);
+        MIDI.sendControlChange(PATCH_PARAMETER_C,Values[2],chnl);
         MIDI.sendControlChange(PATCH_PARAMETER_D,Values[3],chnl);
-        break; 
-      }
-       case 4:
-      {
         MIDI.sendControlChange(PATCH_PARAMETER_E,Values[4],chnl);
-        break; 
-      }
-      default:
-      {
-        break; 
-      }
-    }
-   
- } 
 }
 
 
