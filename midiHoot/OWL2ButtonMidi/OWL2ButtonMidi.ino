@@ -29,8 +29,8 @@ bool button1Toggle = false;
 bool lastButton1Toggle = false; 
 
 const int button2Pin = 3; // analog pin that button 2 is connect to, button 2 is momentary 
-int buttonState2 = 0;         // variable for reading the pushbutton status
-int lastButtonState2 = LOW;   // the previous reading from the input pin
+int buttonState2 = HIGH;         // variable for reading the pushbutton status
+int lastButtonState2 = LOW;   // the previous reading from the input pin, by setting it to LOW, the initial loop will go through the button reading cycle and find that it's off 
 bool button2ChangeFlag = false; 
 long lastDebounceTime2 = 0; 
 
@@ -41,7 +41,7 @@ long debounceDelay2 = 50;
 
 
 
-bool test = false;  
+bool test = true;  
  
 void setup()
 {
@@ -52,7 +52,7 @@ void setup()
   digitalWrite(button2Pin, HIGH);    // Enable pullup resistor
   pinMode(ledPin1, OUTPUT);  
   pinMode(ledPin2,   OUTPUT);  
-   digitalWrite(ledPin1, LOW);    
+  digitalWrite(ledPin1, LOW);    
   digitalWrite(ledPin2, LOW);  
   
   sei();                    // Enable global interrupts
@@ -60,7 +60,7 @@ void setup()
   EICRA |= (1 << ISC01);    // Trigger INT0 on falling edge
   EIMSK |= (1 << INT1);     // Enable external interrupt INT1
   EICRA |= (1 << ISC10);  // Trigger INT1 on any logical change 
- MIDI.setHandleControlChange(HandleControlChange);  
+  MIDI.setHandleControlChange(HandleControlChange);  
  MIDI.begin(1); // This sets to the MIDI baudrate (31250), sets the input to channel 1, enables thru
 
 
@@ -91,14 +91,6 @@ void loop()
     LED_FUNCTION(ledPin2, LED_ON);
   }
   
-  if(midiAssignMode == true && button1ChangeFlag == true)
-  {
-    buttonState2 = HIGH; //off
-   button1ChangeFlag = false;
-    midiAssignMode = false;  
-  }
-
-
   
   if(button1ChangeFlag != false)
   {      
@@ -125,29 +117,38 @@ void loop()
        button1Toggle = true;
      } 
       lastDebounceTime1 = 0;
-      button1ChangeFlag = false;    
+      //button1ChangeFlag = false;    
    }
    
    if((lastDebounceTime2 != 0) && (millis()-lastDebounceTime2) > debounceDelay2)
    {
-      midiAssignMode = false;
      buttonState2 = digitalRead(button2Pin); 
      lastDebounceTime2 = 0;
      button2ChangeFlag = false; 
      
-        if( button1Toggle == true && buttonState2 == true)
-            {              
-              midiAssignMode = true; 
-              button1Toggle = false;
-              buttonState2 = false;
-            }
+   }
+
+  if(midiAssignMode == true && (button1Toggle == true || buttonState2 == LOW))
+  {
+    buttonState2 = HIGH; //off
+   button1Toggle = false;
+   lastButton1Toggle = false;
+    midiAssignMode = false;  
+  }
+
+  if( button1Toggle == true && buttonState2 == LOW)
+  {              
+     midiAssignMode = true; 
+     button1Toggle = false;
+     lastButton1Toggle = false;
+     buttonState2 = HIGH;
    }
 
                                /**OUTPUT**/
- if(midiAssignMode != true)
+ if(midiAssignMode == false)
  {
     // if the button state has changed:
-    if ( button1Toggle != lastButton1Toggle )   
+    if ( button1Toggle != lastButton1Toggle )   //BUTTON 1
     {
       if(  button1Toggle == true )
       {
@@ -161,22 +162,28 @@ void loop()
       }
        lastButton1Toggle = button1Toggle; 
     }
-       if (buttonState2 != lastButtonState2  ) 
+    
+       if (buttonState2 != lastButtonState2  ) // BUTTON 2
     {   
        if(buttonState2 == LOW) 
       {
+        if( !test)
+        {
        SENDCC(storedValues);
+        }
         LED_FUNCTION(ledPin2,LED_ON); // On          
       }
-      else if(buttonState2 == HIGH ) 
-      { 
-         SENDCC(pedalValues);      
+      else if(buttonState2 == HIGH) 
+      {  if( !test)
+        {
+         SENDCC(pedalValues);
+        }      
          LED_FUNCTION(ledPin2,LED_OFF); // Off 
       }
       lastButtonState2 = buttonState2;
     }   
  }    
-    
+  test = false;  
 }
 
 /************main********/ 
@@ -232,7 +239,7 @@ void HandleControlChange(byte channel, byte number, byte value)
   if(midiAssignMode)
  {
    LED_FUNCTION(ledPin1,LED_OFF);
-   
+   LED_FUNCTION(ledPin2,LED_OFF);
    switch(number)
    {
      case PATCH_PARAMETER_A:
@@ -266,7 +273,7 @@ void HandleControlChange(byte channel, byte number, byte value)
      }
    }
     delay(10); 
-    LED_FUNCTION(ledPin1,LED_ON);
+    
   
  }
  else
