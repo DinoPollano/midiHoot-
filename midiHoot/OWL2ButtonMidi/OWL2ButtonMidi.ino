@@ -16,6 +16,9 @@
 #define LED_ON 0 
 #define LED_OFF 3
 #define chnl 1
+#define debounceDelay1  120
+#define debounceDelay2  50
+
 
 bool midiAssignMode = false; 
 
@@ -33,13 +36,6 @@ int buttonState2 = HIGH;         // variable for reading the pushbutton status
 int lastButtonState2 = LOW;   // the previous reading from the input pin, by setting it to LOW, the initial loop will go through the button reading cycle and find that it's off 
 bool button2ChangeFlag = false; 
 long lastDebounceTime2 = 0; 
-
-
-
-long debounceDelay1 = 100;
-long debounceDelay2 = 50;
-
-
 
 bool test = true;  
  
